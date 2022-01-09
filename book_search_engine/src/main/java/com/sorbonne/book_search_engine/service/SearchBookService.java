@@ -1,5 +1,7 @@
 package com.sorbonne.book_search_engine.service;
 
+import com.sorbonne.book_search_engine.algorithms.keyword.Keyword;
+import com.sorbonne.book_search_engine.algorithms.keyword.config.KeywordDictionary;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.entity.Result;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.PagedListHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Sylvain in 2022/01.
@@ -19,6 +22,7 @@ import java.util.Map;
 public class SearchBookService {
     private final Map<Integer, Book> library;
     private final PagedListHolder<Book> pagedLibrary;
+    private final KeywordDictionary keywordDictionary;
 
     public Result getBooksOnPage(int page){
         pagedLibrary.setPage(page);
@@ -37,6 +41,25 @@ public class SearchBookService {
         }catch (NullPointerException e){
             return null;
         }
+    }
+
+    public List<Book> getBooksByWord(String word){
+        String stem = keywordDictionary.getWord2Keyword().get(word.toLowerCase(Locale.ROOT));
+        if (stem == null)
+            return new ArrayList<>();
+        HashMap<Integer, Double> result = keywordDictionary.getKeywordInBooks().get(stem);
+        // sort the result by relevancy
+        result = result.entrySet().stream()
+                .sorted((e1, e2) -> - (e1.getValue().compareTo(e2.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+        List<Book> list = new ArrayList<>();
+        for (Integer id: result.keySet()) {
+            Book book = getBookById(id);
+            list.add(book);
+        }
+        return list;
+
     }
 
 

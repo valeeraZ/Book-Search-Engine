@@ -47,15 +47,49 @@ public class SearchBookController {
         log.info("GET /books?search=" + content);
         String[] words = content.split("\\s+");
         List<List<Book>> results = new ArrayList<>();
+
         for (String word: words) {
-            results.add(searchBookService.getBooksByWord(word));
+            results.add(searchBookService.getBooksByTitle(word));
         }
-        Optional<List<Book>> result = results.parallelStream()
+        Optional<List<Book>> resultTitle = results.parallelStream()
                 .filter(bookList -> bookList != null && bookList.size() != 0)
                 .reduce((a, b) -> {
                     a.retainAll(b);
                     return a;
                 });
-        return ResponseEntity.ok(result.orElse(new ArrayList<>()));
+
+        results.clear();
+        for (String word: words) {
+            results.add(searchBookService.getBooksByAuthor(word));
+        }
+        Optional<List<Book>> resultAuthor = results.parallelStream()
+                .filter(bookList -> bookList != null && bookList.size() != 0)
+                .reduce((a, b) -> {
+                    a.retainAll(b);
+                    return a;
+                });
+
+        results.clear();
+        for (String word: words) {
+            results.add(searchBookService.getBooksByWord(word));
+        }
+        Optional<List<Book>> resultKeywords = results.parallelStream()
+                .filter(bookList -> bookList != null && bookList.size() != 0)
+                .reduce((a, b) -> {
+                    a.retainAll(b);
+                    return a;
+                });
+
+        List<Book> result = resultTitle.orElse(new ArrayList<>());
+        result.addAll(resultAuthor.orElse(new ArrayList<>()));
+        result.addAll(resultKeywords.orElse(new ArrayList<>()));
+
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> uniqueResult = new ArrayList<>();
+        for(Book book: result){
+            if (uniqueBooks.add(book))
+                uniqueResult.add(book);
+        }
+        return ResponseEntity.ok(uniqueResult);
     }
 }

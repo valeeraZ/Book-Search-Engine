@@ -23,6 +23,8 @@ public class SearchBookService {
     private final Map<Integer, Book> library;
     private final PagedListHolder<Book> pagedLibrary;
     private final KeywordDictionary keywordDictionary;
+    private final HashMap<String, HashSet<Integer>> titleDictionary;
+    private final HashMap<String, HashSet<Integer>> authorDictionary;
 
     public Result getBooksOnPage(int page){
         pagedLibrary.setPage(page);
@@ -62,6 +64,29 @@ public class SearchBookService {
 
     }
 
+    public List<Book> getBooksByTitle(String word){
+        HashSet<Integer> result = titleDictionary.getOrDefault(word.toLowerCase(Locale.ROOT), new HashSet<>());
+        if (result.isEmpty())
+            return new ArrayList<>();
+        List<Book> list = new ArrayList<>();
+        for (Integer id: result) {
+            Book book = getBookById(id);
+            list.add(book);
+        }
+        return list;
+    }
+
+    public List<Book> getBooksByAuthor(String word){
+        HashSet<Integer> result = authorDictionary.getOrDefault(word.toLowerCase(Locale.ROOT), new HashSet<>());
+        if (result.isEmpty())
+            return new ArrayList<>();
+        List<Book> list = new ArrayList<>();
+        for (Integer id: result) {
+            Book book = getBookById(id);
+            list.add(book);
+        }
+        return list;
+    }
 
 
 }

@@ -3,6 +3,7 @@ package com.sorbonne.book_search_engine;
 import com.sorbonne.book_search_engine.algorithms.keyword.Keyword;
 import com.sorbonne.book_search_engine.algorithms.keyword.KeywordsExtractor;
 import com.sorbonne.book_search_engine.algorithms.keyword.StemmerLanguage;
+import com.sorbonne.book_search_engine.config.IndexTableConfig;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.service.SearchBookService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +44,12 @@ class BookSearchEngineApplicationTests {
         List<Book> books = searchBookService.getBooksByWord("winterbourne");
         System.out.println("books = " + books);
         assertTrue(books.size() > 0);
+    }
+
+    @Test
+    void testSplitWords() throws IOException {
+        HashSet<String> words = IndexTableConfig.splitWords("The King James Version of the Bible", "en");
+        System.out.println("words = " + words);
     }
 
 }

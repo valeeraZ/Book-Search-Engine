@@ -31,7 +31,11 @@ public class SnowballProgram implements Serializable {
         // the buffer size will not decrease, and we will risk wasting a large
         // amount of memory.
         // Thanks to Wolfram Esser for spotting this problem.
-        current = new StringBuilder(value);
+
+        //current = new StringBuilder(value);
+		//GC Overhead limit:
+		current.setLength(0);
+		current.append(value);
 	init();
     }
 

@@ -16,6 +16,9 @@ public class KeywordsExtractor {
     private final SnowballStemmer stemmer;
     private final Set<Character> alphabet = new HashSet<>();
     private final Set<String> stopWords = new HashSet<>();
+    private final HashMultiset<String> stemmedWords = HashMultiset.create();
+    private final Multimap<String, String> wordsByStem = ArrayListMultimap.create();
+    private final StringBuilder currentWord = new StringBuilder();
 
     public KeywordsExtractor(StemmerLanguage stemmerLanguage){
         this.stemmer = stemmerLanguage.getStemmer();
@@ -76,13 +79,14 @@ public class KeywordsExtractor {
     public List<Keyword> extract(FileReader text) throws IOException {
         BufferedReader reader = new BufferedReader(text);
 
-        HashMultiset<String> stemmedWords = HashMultiset.create();
-        Multimap<String, String> wordsByStem = ArrayListMultimap.create();
+        stemmedWords.clear();
+        wordsByStem.clear();
+        currentWord.setLength(0);
 
-        StringBuilder currentWord = new StringBuilder();
         int ci = reader.read();
         boolean isNewSentence = true;
         boolean stemCurrentWord = true;
+        String word;
         while (ci != -1) { //browsing the text, char by char
             char c = (char) Character.toLowerCase(ci);
             if (alphabet.contains(c)) { //if current char is in the alphabet (which is a space)
@@ -92,8 +96,8 @@ public class KeywordsExtractor {
                 currentWord.append(c); //it is the next char of the current word
                 isNewSentence = false;
             } else {                   //else we have a word!
-                String word = currentWord.toString();
-                currentWord = new StringBuilder();
+                word = currentWord.toString();
+                currentWord.setLength(0);
                 if (!word.isEmpty() && !stopWords.contains(word)) { //if the word is not a stop word
                     String stemmedWord = word;
                     if (stemCurrentWord) {

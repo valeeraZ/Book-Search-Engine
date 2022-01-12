@@ -92,4 +92,22 @@ public class SearchBookController {
         }
         return ResponseEntity.ok(uniqueResult);
     }
+
+    @GetMapping(value = "/books", params = "regex")
+    public ResponseEntity<List<Book>> booksByRegEx(@NotBlank @NotNull @RequestParam(name = "regex", required = true) String content){
+        log.info("GET /books?regex=" + content);
+        List<Book> results = new ArrayList<>();
+
+        results.addAll(searchBookService.getBooksByRegexInTitle(content));
+        results.addAll(searchBookService.getBooksByRegexInAuthor(content));
+        results.addAll(searchBookService.getBooksByRegex(content));
+
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> uniqueResult = new ArrayList<>();
+        for(Book book: results){
+            if (uniqueBooks.add(book))
+                uniqueResult.add(book);
+        }
+        return ResponseEntity.ok(uniqueResult);
+    }
 }

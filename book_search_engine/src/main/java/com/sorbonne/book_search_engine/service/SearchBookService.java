@@ -2,6 +2,10 @@ package com.sorbonne.book_search_engine.service;
 
 import com.sorbonne.book_search_engine.algorithms.keyword.Keyword;
 import com.sorbonne.book_search_engine.algorithms.keyword.config.KeywordDictionary;
+import com.sorbonne.book_search_engine.algorithms.regex.DFA;
+import com.sorbonne.book_search_engine.algorithms.regex.DFAState;
+import com.sorbonne.book_search_engine.algorithms.regex.NFA;
+import com.sorbonne.book_search_engine.algorithms.regex.RegExTree;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.entity.Result;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.sorbonne.book_search_engine.algorithms.regex.RegEx.parse;
 
 /**
  * Created by Sylvain in 2022/01.
@@ -86,6 +92,113 @@ public class SearchBookService {
             list.add(book);
         }
         return list;
+    }
+
+
+    public List<Book> getBooksByRegex(String regEx){
+        HashMap<String, String> word2Keywords = keywordDictionary.getWord2Keyword();
+        HashSet<String> candidats = new HashSet<>(word2Keywords.keySet());
+        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        List<List<Book>> listBooks = new ArrayList<>();
+        for (String word: words){
+            listBooks.add(getBooksByWord(word));
+        }
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> result = new ArrayList<>();
+        for (List<Book> books: listBooks) {
+            for (Book book: books) {
+                if (uniqueBooks.add(book))
+                    result.add(book);
+            }
+        }
+        return result;
+    }
+
+    public List<Book> getBooksByRegexInTitle(String regEx){
+        HashSet<String> candidats = new HashSet<>(titleDictionary.keySet());
+        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        List<List<Book>> listBooks = new ArrayList<>();
+        for (String word: words){
+            listBooks.add(getBooksByTitle(word));
+        }
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> result = new ArrayList<>();
+        for (List<Book> books: listBooks) {
+            for (Book book: books) {
+                if (uniqueBooks.add(book))
+                    result.add(book);
+            }
+        }
+        return result;
+    }
+
+    public List<Book> getBooksByRegexInAuthor(String regEx){
+        HashSet<String> candidats = new HashSet<>(authorDictionary.keySet());
+        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        List<List<Book>> listBooks = new ArrayList<>();
+        for (String word: words){
+            listBooks.add(getBooksByAuthor(word));
+        }
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> result = new ArrayList<>();
+        for (List<Book> books: listBooks) {
+            for (Book book: books) {
+                if (uniqueBooks.add(book))
+                    result.add(book);
+            }
+        }
+        return result;
+    }
+
+    private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){
+        RegExTree ret;
+        DFAState root;
+        Set<DFAState> acceptings;
+        if (regEx.length() < 1) {
+            System.err.println("  >> ERROR: empty regEx.");
+            return new HashSet<>();
+        } else {
+            try {
+                ret = parse(regEx);
+            } catch (Exception e) {
+                log.info("Error parsing RegEx: " + regEx);
+                e.printStackTrace();
+                return new HashSet<>();
+            }
+        }
+
+        NFA nfa = NFA.fromRegExTreeToNFA(ret);
+        DFA dfa = DFA.fromNFAtoDFA(nfa);
+        root = dfa.getRoot();
+        acceptings = dfa.getAcceptings();
+
+        HashSet<String> result = new HashSet<>();
+        for (String word: words){
+            if (search(root, root, acceptings, word, 0)){
+                result.add(word);
+            }
+        }
+        return result;
+    }
+
+    private boolean search(DFAState root, DFAState state, Set<DFAState> acceptings, String line, int position) {
+        if (acceptings.contains(state))
+            return true;
+
+        if (position >= line.length())
+            return false;
+
+        int input = line.charAt(position);
+
+        DFAState next = state.getTransition(input);
+
+        if (next == null)
+            return search(root, root, acceptings, line, position + 1);
+
+        if (!search(root, next, acceptings, line, position + 1))
+            return search(root, root, acceptings, line, position + 1);
+
+        return true;
     }
 
 

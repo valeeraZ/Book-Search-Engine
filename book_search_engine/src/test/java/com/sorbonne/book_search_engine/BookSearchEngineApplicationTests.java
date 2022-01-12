@@ -52,4 +52,10 @@ class BookSearchEngineApplicationTests {
         System.out.println("words = " + words);
     }
 
+    @Test
+    void testRegExSearchKeyword(){
+        List<Book> books = searchBookService.getBooksByRegex("winterb");
+        System.out.println("books = " + books);
+    }
+
 }

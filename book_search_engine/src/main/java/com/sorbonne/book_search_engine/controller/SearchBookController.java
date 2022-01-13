@@ -49,28 +49,6 @@ public class SearchBookController {
         List<List<Book>> results = new ArrayList<>();
 
         for (String word: words) {
-            results.add(searchBookService.getBooksByTitle(word));
-        }
-        Optional<List<Book>> resultTitle = results.parallelStream()
-                .filter(bookList -> bookList != null && bookList.size() != 0)
-                .reduce((a, b) -> {
-                    a.retainAll(b);
-                    return a;
-                });
-
-        results.clear();
-        for (String word: words) {
-            results.add(searchBookService.getBooksByAuthor(word));
-        }
-        Optional<List<Book>> resultAuthor = results.parallelStream()
-                .filter(bookList -> bookList != null && bookList.size() != 0)
-                .reduce((a, b) -> {
-                    a.retainAll(b);
-                    return a;
-                });
-
-        results.clear();
-        for (String word: words) {
             results.add(searchBookService.getBooksByWord(word));
         }
         Optional<List<Book>> resultKeywords = results.parallelStream()
@@ -80,14 +58,45 @@ public class SearchBookController {
                     return a;
                 });
 
-        List<Book> result = resultTitle.orElse(new ArrayList<>());
-        result.addAll(resultAuthor.orElse(new ArrayList<>()));
-        result.addAll(resultKeywords.orElse(new ArrayList<>()));
+        List<Book> result = resultKeywords.orElse(new ArrayList<>());
+        result = searchBookService.orderBooksByCloseness(result);
+        return ResponseEntity.ok(result);
+    }
 
-        HashSet<Book> uniqueBooks = new HashSet<>(result);
-        List<Book> uniqueResult = new ArrayList<>(uniqueBooks);
-        uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
-        return ResponseEntity.ok(uniqueResult);
+    @GetMapping(value = "/books", params = "searchByTitle")
+    public ResponseEntity<List<Book>> booksByTitle(@NotBlank @NotNull @RequestParam(name = "searchByTitle", required = true) String content){
+        log.info("GET /books?searchByTitle=" + content);
+        String[] words = content.split("\\s+");
+        List<List<Book>> results = new ArrayList<>();
+        for (String word: words) {
+            results.add(searchBookService.getBooksByTitle(word));
+        }
+        Optional<List<Book>> resultTitle = results.parallelStream()
+                .filter(bookList -> bookList != null && bookList.size() != 0)
+                .reduce((a, b) -> {
+                    a.retainAll(b);
+                    return a;
+                });
+        List<Book> result = resultTitle.orElse(new ArrayList<>());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping(value = "/books", params = "searchByAuthor")
+    public ResponseEntity<List<Book>> booksByAuthor(@NotBlank @NotNull @RequestParam(name = "searchByAuthor", required = true) String content){
+        log.info("GET /books?searchByAuthor=" + content);
+        String[] words = content.split("\\s+");
+        List<List<Book>> results = new ArrayList<>();
+        for (String word: words) {
+            results.add(searchBookService.getBooksByAuthor(word));
+        }
+        Optional<List<Book>> resultAuthor = results.parallelStream()
+                .filter(bookList -> bookList != null && bookList.size() != 0)
+                .reduce((a, b) -> {
+                    a.retainAll(b);
+                    return a;
+                });
+        List<Book> result = resultAuthor.orElse(new ArrayList<>());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping(value = "/books", params = "regex")

@@ -1,6 +1,7 @@
 package com.sorbonne.book_search_engine.algorithms.keyword.config;
 
 import com.sorbonne.book_search_engine.algorithms.keyword.Keyword;
+import javafx.util.Pair;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,4 +16,5 @@ import java.util.List;
 public class KeywordDictionary implements Serializable {
     private final HashMap<String, String> word2Keyword;
     private final HashMap<String, HashMap<Integer, Double>> keywordInBooks;
+    private final HashMap<Integer, List<Pair<String, Double>>> keywordBookTable;
 }

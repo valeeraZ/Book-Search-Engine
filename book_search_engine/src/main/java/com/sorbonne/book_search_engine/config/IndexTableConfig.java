@@ -6,6 +6,7 @@ import com.sorbonne.book_search_engine.algorithms.keyword.StemmerLanguage;
 import com.sorbonne.book_search_engine.algorithms.keyword.config.KeywordDictionary;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.entity.Person;
+import javafx.util.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,61 +25,132 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class IndexTableConfig {
 
-    @Bean
-    public KeywordDictionary keywordDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
-
-        if (new File("keywords.ser").exists()){
+    public HashMap<Integer, List<Keyword>> keywordBookTable(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
+        if (new File("keywordsTable.ser").exists()){
             log.info("Loading index table of keywords from file to memory...");
-            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("keywords.ser"));
-            KeywordDictionary dictionary = (KeywordDictionary) inputStream.readObject();
+            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("keywordsTable.ser"));
+            HashMap<Integer, List<Keyword>> keywordBookTable = (HashMap<Integer, List<Keyword>>) inputStream.readObject();
             inputStream.close();
-            return dictionary;
+            return keywordBookTable;
         }
 
         log.info("Charging index tables of keywords...");
-        // a map of <word, stem>
-        HashMap<String, String> word2Keyword = new HashMap<>();
-        // a map of <Stem, map <Id_book, Relevancy_Keyword_Book>>
-        HashMap<String, HashMap<Integer, Double>> keywordInBooks = new HashMap<>();
+        // a map of <Id_book, List<Keyword>
+        HashMap<Integer, List<Keyword>> keywordBookTable = new HashMap<>();
         FileReader reader;
-        KeywordsExtractor extractor;
+
         StemmerLanguage languageEn = StemmerLanguage.ENGLISH;
         StemmerLanguage languageFr = StemmerLanguage.FRENCH;
+        KeywordsExtractor extractorEn = new KeywordsExtractor(languageEn);
+        KeywordsExtractor extractorFr = new KeywordsExtractor(languageFr);
+        List<Keyword> keywords;
         for (Book book: library.values()){
             String bookText = "books/" + book.getId() + ".txt";
             try {
                 reader = new FileReader(bookText);
                 if (book.getLanguages().contains("en")) {
-                    extractor = new KeywordsExtractor(languageEn);
+                    keywords = extractorEn.extract(reader);
                 }
                 else if (book.getLanguages().contains("fr")){
-                    extractor = new KeywordsExtractor(languageFr);
+                    keywords = extractorFr.extract(reader);
                 }else {
                     continue;
                 }
-                List<Keyword> keywords = extractor.extract(reader);
-                for (Keyword keyword: keywords) {
-                    for (String word: keyword.getWords()){
-                        word2Keyword.put(word, keyword.getStem());
-                    }
-                    String stem = keyword.getStem();
-                    if (keywordInBooks.containsKey(stem)){
-                        HashMap<Integer, Double> value = keywordInBooks.get(stem);
-                        value.put(book.getId(), keyword.getRelevance());
-                        keywordInBooks.put(stem, value);
-                    }else {
-                        HashMap<Integer, Double> value = new HashMap<>();
-                        value.put(book.getId(), keyword.getRelevance());
-                        keywordInBooks.put(stem, value);
-                    }
-                }
+                keywordBookTable.put(book.getId(), keywords);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        KeywordDictionary dictionary = new KeywordDictionary(word2Keyword, keywordInBooks);
-        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("keywords.ser"));
+        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("keywordsTable.ser"));
+        outputStream.writeObject(keywordBookTable);
+        outputStream.flush();
+        outputStream.close();
+        return keywordBookTable;
+    }
+
+    @Bean
+    public KeywordDictionary keywordDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
+
+        if (new File("keywordsDictionary.ser").exists()){
+            log.info("Loading dictionary of keywords from file to memory...");
+            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("keywordsDictionary.ser"));
+            KeywordDictionary dictionary = (KeywordDictionary) inputStream.readObject();
+            inputStream.close();
+            return dictionary;
+        }
+
+        log.info("Charging dictionary of keywords...");
+
+        // a map of <word, stem>
+        HashMap<String, String> word2Keyword = new HashMap<>();
+        // a map of <Stem, map <Id_book, Relevancy_Keyword_Book>>
+        HashMap<String, HashMap<Integer, Double>> keywordInBooks = new HashMap<>();
+        // a map of <Id_book, List<Pair<Stem, Relevance>>
+        HashMap<Integer, List<Pair<String, Double>>> keywordBookTable = new HashMap<>();
+
+        FileReader reader;
+
+        StemmerLanguage languageEn = StemmerLanguage.ENGLISH;
+        StemmerLanguage languageFr = StemmerLanguage.FRENCH;
+        KeywordsExtractor extractorEn = new KeywordsExtractor(languageEn);
+        KeywordsExtractor extractorFr = new KeywordsExtractor(languageFr);
+        List<Keyword> keywords;
+        for (Book book: library.values()){
+            int bookId = book.getId();
+            String bookText = "books/" + bookId + ".txt";
+            try {
+                reader = new FileReader(bookText);
+                if (book.getLanguages().contains("en")) {
+                    keywords = extractorEn.extract(reader);
+                }
+                else if (book.getLanguages().contains("fr")){
+                    keywords = extractorFr.extract(reader);
+                }else {
+                    continue;
+                }
+                for (Keyword keyword: keywords){
+                    String stem = keyword.getStem();
+                    Set<String> words = keyword.getWords();
+                    double relevance = keyword.getRelevance();
+
+                    // word2Keyword
+                    for (String word: words){
+                        word2Keyword.put(word, stem);
+                    }
+
+                    // keywordInBooks
+                    if (keywordInBooks.containsKey(stem)){
+                        HashMap<Integer, Double> keywordRelevance = keywordInBooks.get(stem);
+                        keywordRelevance.put(bookId, relevance);
+                        keywordInBooks.put(stem, keywordRelevance);
+                    }else {
+                        HashMap<Integer, Double> keywordRelevance = new HashMap<>();
+                        keywordRelevance.put(bookId, relevance);
+                        keywordInBooks.put(stem, keywordRelevance);
+                    }
+
+                    // keywordBookTable, in fact, a reverse version of keywordInBooks
+                    if (keywordBookTable.containsKey(bookId)){
+                        List<Pair<String, Double>> stemRelevanceList = keywordBookTable.get(bookId);
+                        Pair<String, Double> stemRelevance = new Pair<>(stem, relevance);
+                        stemRelevanceList.add(stemRelevance);
+                        keywordBookTable.put(bookId, stemRelevanceList);
+                    }else {
+                        List<Pair<String, Double>> stemRelevanceList = new ArrayList<>();
+                        Pair<String, Double> stemRelevance = new Pair<>(stem, relevance);
+                        stemRelevanceList.add(stemRelevance);
+                        keywordBookTable.put(bookId, stemRelevanceList);
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        KeywordDictionary dictionary = new KeywordDictionary(word2Keyword, keywordInBooks, keywordBookTable);
+        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("keywordsDictionary.ser"));
         outputStream.writeObject(dictionary);
         outputStream.flush();
         outputStream.close();
@@ -130,7 +202,7 @@ public class IndexTableConfig {
     @Bean
     public HashMap<String, HashSet<Integer>> authorDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException{
         if (new File("authors.ser").exists()){
-            log.info("Loading index table of titles from file to memory...");
+            log.info("Loading index table of authors from file to memory...");
             ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("authors.ser"));
             HashMap<String, HashSet<Integer>> titleDictionary = (HashMap<String, HashSet<Integer>>) inputStream.readObject();
             inputStream.close();

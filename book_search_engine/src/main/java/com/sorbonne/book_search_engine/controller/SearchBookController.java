@@ -84,12 +84,9 @@ public class SearchBookController {
         result.addAll(resultAuthor.orElse(new ArrayList<>()));
         result.addAll(resultKeywords.orElse(new ArrayList<>()));
 
-        HashSet<Book> uniqueBooks = new HashSet<>();
-        List<Book> uniqueResult = new ArrayList<>();
-        for(Book book: result){
-            if (uniqueBooks.add(book))
-                uniqueResult.add(book);
-        }
+        HashSet<Book> uniqueBooks = new HashSet<>(result);
+        List<Book> uniqueResult = new ArrayList<>(uniqueBooks);
+        uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
         return ResponseEntity.ok(uniqueResult);
     }
 
@@ -102,12 +99,9 @@ public class SearchBookController {
         results.addAll(searchBookService.getBooksByRegexInAuthor(content));
         results.addAll(searchBookService.getBooksByRegex(content));
 
-        HashSet<Book> uniqueBooks = new HashSet<>();
-        List<Book> uniqueResult = new ArrayList<>();
-        for(Book book: results){
-            if (uniqueBooks.add(book))
-                uniqueResult.add(book);
-        }
+        HashSet<Book> uniqueBooks = new HashSet<>(results);
+        List<Book> uniqueResult = new ArrayList<>(uniqueBooks);
+        uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
         return ResponseEntity.ok(uniqueResult);
     }
 }

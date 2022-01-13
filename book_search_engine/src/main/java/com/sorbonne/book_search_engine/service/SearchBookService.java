@@ -8,6 +8,7 @@ import com.sorbonne.book_search_engine.algorithms.regex.NFA;
 import com.sorbonne.book_search_engine.algorithms.regex.RegExTree;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.entity.Result;
+import javafx.util.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,8 @@ public class SearchBookService {
     private final KeywordDictionary keywordDictionary;
     private final HashMap<String, HashSet<Integer>> titleDictionary;
     private final HashMap<String, HashSet<Integer>> authorDictionary;
+    private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
+    private final Map<Integer, Double> closenessCentrality;
 
     public Result getBooksOnPage(int page){
         pagedLibrary.setPage(page);
@@ -148,6 +151,16 @@ public class SearchBookService {
             }
         }
         return result;
+    }
+
+    public double jaccardDistance2Books(int id1, int id2){
+        return jaccardDistanceMap.get(id1).get(id2);
+    }
+
+    public List<Book> orderBooksByCloseness(List<Book> books){
+        List<Integer> orderedIds = new ArrayList<>(closenessCentrality.keySet());
+        books.sort(Comparator.comparing(book -> orderedIds.indexOf(book.getId())));
+        return books;
     }
 
     private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){

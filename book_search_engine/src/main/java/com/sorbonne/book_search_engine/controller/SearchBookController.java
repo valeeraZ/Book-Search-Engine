@@ -43,14 +43,22 @@ public class SearchBookController {
     }
 
     @GetMapping(value = "/books", params = "search")
-    public ResponseEntity<List<Book>> booksByWord(@NotBlank @NotNull @RequestParam(name = "search", required = true) String content){
-        log.info("GET /books?search=" + content);
+    public ResponseEntity<List<Book>> booksByWord(@NotBlank @NotNull @RequestParam(name = "search", required = true) String content,
+                                                  @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
+        log.info("GET /books?search=" + content + "&closeness=" + closeness);
         String[] words = content.split("\\s+");
         List<List<Book>> results = new ArrayList<>();
 
         for (String word: words) {
             results.add(searchBookService.getBooksByWord(word));
         }
+        List<Book> result = retainIntersection(results);
+        if (closeness)
+            result = searchBookService.orderBooksByCloseness(result);
+        return ResponseEntity.ok(result);
+    }
+
+    private List<Book> retainIntersection(List<List<Book>> results) {
         Optional<List<Book>> resultKeywords = results.parallelStream()
                 .filter(bookList -> bookList != null && bookList.size() != 0)
                 .reduce((a, b) -> {
@@ -58,9 +66,7 @@ public class SearchBookController {
                     return a;
                 });
 
-        List<Book> result = resultKeywords.orElse(new ArrayList<>());
-        result = searchBookService.orderBooksByCloseness(result);
-        return ResponseEntity.ok(result);
+        return resultKeywords.orElse(new ArrayList<>());
     }
 
     @GetMapping(value = "/books", params = "searchByTitle")
@@ -71,13 +77,8 @@ public class SearchBookController {
         for (String word: words) {
             results.add(searchBookService.getBooksByTitle(word));
         }
-        Optional<List<Book>> resultTitle = results.parallelStream()
-                .filter(bookList -> bookList != null && bookList.size() != 0)
-                .reduce((a, b) -> {
-                    a.retainAll(b);
-                    return a;
-                });
-        List<Book> result = resultTitle.orElse(new ArrayList<>());
+        List<Book> result = retainIntersection(results);
+        result = searchBookService.orderBooksByCloseness(result);
         return ResponseEntity.ok(result);
     }
 
@@ -89,28 +90,36 @@ public class SearchBookController {
         for (String word: words) {
             results.add(searchBookService.getBooksByAuthor(word));
         }
-        Optional<List<Book>> resultAuthor = results.parallelStream()
-                .filter(bookList -> bookList != null && bookList.size() != 0)
-                .reduce((a, b) -> {
-                    a.retainAll(b);
-                    return a;
-                });
-        List<Book> result = resultAuthor.orElse(new ArrayList<>());
+        List<Book> result = retainIntersection(results);
+        result = searchBookService.orderBooksByCloseness(result);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping(value = "/books", params = "regex")
-    public ResponseEntity<List<Book>> booksByRegEx(@NotBlank @NotNull @RequestParam(name = "regex", required = true) String content){
-        log.info("GET /books?regex=" + content);
+    public ResponseEntity<List<Book>> booksByRegEx(@NotBlank @NotNull @RequestParam(name = "regex", required = true) String content,
+                                                   @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
+        log.info("GET /books?regex=" + content + "&closeness=" + closeness);
         List<Book> results = new ArrayList<>();
 
         results.addAll(searchBookService.getBooksByRegexInTitle(content));
         results.addAll(searchBookService.getBooksByRegexInAuthor(content));
         results.addAll(searchBookService.getBooksByRegex(content));
 
-        HashSet<Book> uniqueBooks = new HashSet<>(results);
-        List<Book> uniqueResult = new ArrayList<>(uniqueBooks);
-        uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
+        HashSet<Book> uniqueBooks;
+        List<Book> uniqueResult;
+        if (closeness){
+            uniqueBooks = new HashSet<>(results);
+            uniqueResult = new ArrayList<>(uniqueBooks);
+            uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
+        }else {
+            uniqueBooks = new HashSet<>();
+            uniqueResult = new ArrayList<>();
+            for (Book book: results){
+                if (uniqueBooks.add(book))
+                    uniqueResult.add(book);
+            }
+        }
+
         return ResponseEntity.ok(uniqueResult);
     }
 }

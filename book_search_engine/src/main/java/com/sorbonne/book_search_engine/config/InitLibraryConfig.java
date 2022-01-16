@@ -51,7 +51,7 @@ public class InitLibraryConfig {
 
         // else, download the 1664 books information into a .ser file and download the text of each book into /books/<id>.txt
         log.info("First time use, Downloading 1664 books ...");
-        ResponseEntity<GutendexData> result = restTemplate.exchange("http://gutendex.com/books?mime_type=text", HttpMethod.GET, httpHeaders, GutendexData.class);
+        ResponseEntity<GutendexData> result = restTemplate.exchange("http://gutendex.com/books?mime_type=text&languages=en", HttpMethod.GET, httpHeaders, GutendexData.class);
         ArrayList<Book> books;
         while (library.size() < 1664){
             books = Objects.requireNonNull(result.getBody()).getResults();
@@ -95,9 +95,13 @@ public class InitLibraryConfig {
      * @return the PagedListHolder for request books from page 0 - 139 (1680/12 = 140)
      */
     @Bean
-    public PagedListHolder<Book> pagedLibrary(Map<Integer, Book> library){
-        List<Book> list = new ArrayList<>(library.values());
-        PagedListHolder<Book> pagedLibrary = new PagedListHolder<>(list);
+    public PagedListHolder<Book> pagedLibrary(Map<Integer, Book> library, Map<Integer, Double> closenessCentrality){
+        List<Book> books = new ArrayList<>();
+        List<Integer> orderedIds = new ArrayList<>(closenessCentrality.keySet());
+        for (Integer id: orderedIds) {
+            books.add(library.get(id));
+        }
+        PagedListHolder<Book> pagedLibrary = new PagedListHolder<>(books);
         pagedLibrary.setPageSize(12);
         return pagedLibrary;
     }

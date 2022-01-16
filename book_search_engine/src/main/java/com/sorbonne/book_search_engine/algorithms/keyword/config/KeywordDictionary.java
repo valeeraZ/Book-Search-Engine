@@ -16,5 +16,5 @@ import java.util.List;
 public class KeywordDictionary implements Serializable {
     private final HashMap<String, String> word2Keyword;
     private final HashMap<String, HashMap<Integer, Double>> keywordInBooks;
-    private final HashMap<Integer, List<Pair<String, Double>>> keywordBookTable;
+    private final HashMap<Integer, HashMap<String, Double>> keywordBookTable;
 }

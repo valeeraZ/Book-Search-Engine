@@ -86,8 +86,8 @@ public class IndexTableConfig {
         HashMap<String, String> word2Keyword = new HashMap<>();
         // a map of <Stem, map <Id_book, Relevancy_Keyword_Book>>
         HashMap<String, HashMap<Integer, Double>> keywordInBooks = new HashMap<>();
-        // a map of <Id_book, List<Pair<Stem, Relevance>>
-        HashMap<Integer, List<Pair<String, Double>>> keywordBookTable = new HashMap<>();
+        // a map of <Id_book, map<Stem, Relevance>>
+        HashMap<Integer, HashMap<String, Double>> keywordBookTable = new HashMap<>();
 
         FileReader reader;
 
@@ -132,15 +132,13 @@ public class IndexTableConfig {
 
                     // keywordBookTable, in fact, a reverse version of keywordInBooks
                     if (keywordBookTable.containsKey(bookId)){
-                        List<Pair<String, Double>> stemRelevanceList = keywordBookTable.get(bookId);
-                        Pair<String, Double> stemRelevance = new Pair<>(stem, relevance);
-                        stemRelevanceList.add(stemRelevance);
-                        keywordBookTable.put(bookId, stemRelevanceList);
+                        HashMap<String, Double> stemRelevanceMap = keywordBookTable.get(bookId);
+                        stemRelevanceMap.put(stem, relevance);
+                        keywordBookTable.put(bookId, stemRelevanceMap);
                     }else {
-                        List<Pair<String, Double>> stemRelevanceList = new ArrayList<>();
-                        Pair<String, Double> stemRelevance = new Pair<>(stem, relevance);
-                        stemRelevanceList.add(stemRelevance);
-                        keywordBookTable.put(bookId, stemRelevanceList);
+                        HashMap<String, Double> stemRelevanceMap = new HashMap<>();
+                        stemRelevanceMap.put(stem, relevance);
+                        keywordBookTable.put(bookId, stemRelevanceMap);
                     }
                 }
 

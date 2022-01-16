@@ -17,6 +17,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BookSearchEngineApplicationTests {
     private final SearchBookService searchBookService;
     private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
+    private final Map<Integer, Double> closenessCentrality;
 
     @Test
     void contextLoads() {
@@ -66,6 +69,20 @@ class BookSearchEngineApplicationTests {
         double distance10and1 = searchBookService.jaccardDistance2Books(10, 1);
         System.out.println("distance between Book 10 and Book 30 = " + distance10and30);
         System.out.println("distance between Book 10 and Book 1 = " + distance10and1);
+    }
+
+    @Test
+    void testClosenessCentralityOrder(){
+        List<Book> page1Books = searchBookService.orderBooksByCloseness(searchBookService.getBooksOnPage(1).getResult());
+        System.out.println("order books on page1 by closeness centrality = " + page1Books);
+    }
+
+    @Test
+    void testClosenessCentralityValue(){
+        List<Map.Entry<Integer, Double>> res = closenessCentrality.entrySet().stream()
+                .limit(200)
+                .collect(Collectors.toList());
+        System.out.println("res = " + res);
     }
 
 }

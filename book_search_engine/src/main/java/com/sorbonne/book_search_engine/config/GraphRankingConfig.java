@@ -41,12 +41,12 @@ public class GraphRankingConfig {
 
         HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap = new HashMap<>();
 
-        HashMap<Integer, List<Pair<String, Double>>> keywordBookTable = keywordDictionary.getKeywordBookTable();
+        HashMap<Integer, HashMap<String, Double>> keywordBookTable = keywordDictionary.getKeywordBookTable();
 
         for (int id1: keywordBookTable.keySet()){
             for (int id2: keywordBookTable.keySet()){
-                List<Pair<String, Double>> table1 = keywordBookTable.get(id1);
-                List<Pair<String, Double>> table2 = keywordBookTable.get(id2);
+                HashMap<String, Double> table1 = keywordBookTable.get(id1);
+                HashMap<String, Double> table2 = keywordBookTable.get(id2);
                 double distance = jaccardDistanceBetweenTable(table1, table2);
                 if (jaccardDistanceMap.containsKey(id1)){
                     HashMap<Integer, Double> distanceId1 = jaccardDistanceMap.get(id1);
@@ -79,16 +79,17 @@ public class GraphRankingConfig {
         }
 
         log.info("Charging Closeness Centrality Ranking...");
-
+        int numberBooks = jaccardDistanceMap.size();
         HashMap<Integer, Double> closenessMap = new HashMap<>();
         for (Map.Entry<Integer, HashMap<Integer, Double>> jaccardDistance: jaccardDistanceMap.entrySet()){
             int id = jaccardDistance.getKey();
             HashMap<Integer, Double> distances = jaccardDistance.getValue();
-            double closeness = 1 / distances.values().stream().mapToDouble(Double::doubleValue).sum();
+            double sumDistance = distances.values().stream().mapToDouble(Double::doubleValue).sum();
+            double closeness = (numberBooks - 1) / sumDistance;
             closenessMap.put(id, closeness);
         }
         List<Map.Entry<Integer, Double>> list = new ArrayList<>(closenessMap.entrySet());
-        Collections.sort(list, (o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+        list.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
         Map<Integer, Double> result = new LinkedHashMap<>();
         for (Iterator<Map.Entry<Integer, Double>> it = list.listIterator(); it.hasNext();){
             Map.Entry<Integer, Double> entry = it.next();
@@ -103,20 +104,46 @@ public class GraphRankingConfig {
         return result;
     }
 
-    private static Double jaccardDistanceBetweenTable(List<Pair<String, Double>> table1, List<Pair<String, Double>> table2){
-        table1.sort(Comparator.comparing(Pair::getKey));
-        table2.sort(Comparator.comparing(Pair::getKey));
-
+    private static Double jaccardDistanceBetweenTable(HashMap<String, Double> table1, HashMap<String, Double> table2){
         double dividend = 0;
         double divisor = 0;
 
+        HashMap<String, Double> tableSmaller, tableBigger;
+        if (table1.size() > table2.size()){
+            tableBigger = table1;
+            tableSmaller = table2;
+        }else {
+            tableBigger = table2;
+            tableSmaller = table1;
+        }
+
+        int i = 0;
+        for (Map.Entry<String, Double> entry: tableBigger.entrySet()){
+            String stem = entry.getKey();
+            Double relevance1 = entry.getValue();
+            Double relevance2 = tableSmaller.get(stem);
+            if (relevance2 != null){
+                dividend += Math.max(relevance1, relevance2) - Math.min(relevance1, relevance2);
+                divisor += Math.max(relevance1, relevance2);
+            }
+        }
+
+        /*
         for (int i = 0; i < Math.min(table1.size(), table2.size()); i++){
+            String stem1 = table1.get(i).getKey();
+            String stem2 = table2.get(i).getKey();
+            if (!stem1.equals(stem2)){
+                System.out.println("count: " + i);
+                break;
+            }
             double relevance1 = table1.get(i).getValue();
             double relevance2 = table2.get(i).getValue();
             dividend += Math.max(relevance1, relevance2) - Math.min(relevance1, relevance2);
             divisor += Math.max(relevance1, relevance2);
         }
-
+         */
+        if (divisor == 0)
+            return 1.0;
         return dividend / divisor;
 
     }

@@ -17,7 +17,6 @@ For building and running the application you need:
 
 - [JDK 1.8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 - [Maven 3](https://maven.apache.org)
-- [Node.js](https://nodejs.org/en/) version 10.13 or later
 - 1.5G of free disk space for downloading 1680 books
 
 ## Running the application locally
@@ -37,20 +36,6 @@ mvn spring-boot:run
 ```
 
  The program will start downloading 1680 books from [Project Gutenberg](https://gutenberg.org/). The time of downloading might take some moments, which depends on your network quality. 
-
-### Starting the front end
-
-After the back end starts running, you can start the front end. Use `cd book_search_enging-front-end` or any IDE (VS Code, WebStorm...) to open this folder.
-
-Make sure the back end is running, then you can use
-
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-to run the front end. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Documentation of API
 See [Our Postman API Documenter](https://documenter.getpostman.com/view/10263827/UVRHiP1r).

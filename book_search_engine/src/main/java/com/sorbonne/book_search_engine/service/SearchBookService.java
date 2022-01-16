@@ -69,7 +69,7 @@ public class SearchBookService {
             Book book = getBookById(id);
             list.add(book);
         }
-        return list;
+        return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
     }
 
@@ -82,7 +82,7 @@ public class SearchBookService {
             Book book = getBookById(id);
             list.add(book);
         }
-        return list;
+        return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public List<Book> getBooksByAuthor(String word){
@@ -94,7 +94,7 @@ public class SearchBookService {
             Book book = getBookById(id);
             list.add(book);
         }
-        return list;
+        return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
 
@@ -114,7 +114,7 @@ public class SearchBookService {
                     result.add(book);
             }
         }
-        return result;
+        return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public List<Book> getBooksByRegexInTitle(String regEx){
@@ -132,7 +132,7 @@ public class SearchBookService {
                     result.add(book);
             }
         }
-        return result;
+        return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public List<Book> getBooksByRegexInAuthor(String regEx){
@@ -150,7 +150,7 @@ public class SearchBookService {
                     result.add(book);
             }
         }
-        return result;
+        return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public double jaccardDistance2Books(int id1, int id2){
@@ -173,7 +173,7 @@ public class SearchBookService {
         }
         List<Book> result = new ArrayList<>();
         neighborIds.forEach(id -> result.add(getBookById(id)));
-        return result;
+        return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){

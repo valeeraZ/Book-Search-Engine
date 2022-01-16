@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.web.bind.annotation.*;
@@ -121,5 +122,12 @@ public class SearchBookController {
         }
 
         return ResponseEntity.ok(uniqueResult);
+    }
+
+    @GetMapping(value = "/books", params = "suggestions")
+    public ResponseEntity<List<Book>> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestions") Integer[] suggestions){
+        log.info("GET /books?ids=" + Arrays.toString(suggestions));
+        List<Integer> bookIds = Arrays.asList(suggestions);
+        return ResponseEntity.ok(searchBookService.getNeighborBooksByJaccard(bookIds));
     }
 }

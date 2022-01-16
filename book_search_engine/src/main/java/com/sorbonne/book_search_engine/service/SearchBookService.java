@@ -163,6 +163,19 @@ public class SearchBookService {
         return books;
     }
 
+    public List<Book> getNeighborBooksByJaccard(List<Integer> ids){
+        HashSet<Integer> neighborIds = new HashSet<>();
+        for (Integer id: ids){
+            HashMap<Integer, Double> distances = jaccardDistanceMap.get(id);
+            distances.remove(id);
+            Integer id2 = Collections.min(distances.entrySet(), Map.Entry.comparingByValue()).getKey();
+            neighborIds.add(id2);
+        }
+        List<Book> result = new ArrayList<>();
+        neighborIds.forEach(id -> result.add(getBookById(id)));
+        return result;
+    }
+
     private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){
         RegExTree ret;
         DFAState root;

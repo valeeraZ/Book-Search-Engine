@@ -37,7 +37,9 @@ public class FetchBookService {
         String textURL = getTextURL(format);
         if (textURL == null)
             return new AsyncResult<>(null);
-        book.setImage(format.getImage().replace("small", "medium"));
+        if (format.getImage() != null){
+            book.setImage(format.getImage().replace("small", "medium"));
+        }
         book.setText(textURL);
         try {
             String text = restTemplate.getForObject(textURL, String.class);

@@ -25,50 +25,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class IndexTableConfig {
 
-    public HashMap<Integer, List<Keyword>> keywordBookTable(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
-        if (new File("keywordsTable.ser").exists()){
-            log.info("Loading index table of keywords from file to memory...");
-            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("keywordsTable.ser"));
-            HashMap<Integer, List<Keyword>> keywordBookTable = (HashMap<Integer, List<Keyword>>) inputStream.readObject();
-            inputStream.close();
-            return keywordBookTable;
-        }
-
-        log.info("Charging index tables of keywords...");
-        // a map of <Id_book, List<Keyword>
-        HashMap<Integer, List<Keyword>> keywordBookTable = new HashMap<>();
-        FileReader reader;
-
-        StemmerLanguage languageEn = StemmerLanguage.ENGLISH;
-        StemmerLanguage languageFr = StemmerLanguage.FRENCH;
-        KeywordsExtractor extractorEn = new KeywordsExtractor(languageEn);
-        KeywordsExtractor extractorFr = new KeywordsExtractor(languageFr);
-        List<Keyword> keywords;
-        for (Book book: library.values()){
-            String bookText = "books/" + book.getId() + ".txt";
-            try {
-                reader = new FileReader(bookText);
-                if (book.getLanguages().contains("en")) {
-                    keywords = extractorEn.extract(reader);
-                }
-                else if (book.getLanguages().contains("fr")){
-                    keywords = extractorFr.extract(reader);
-                }else {
-                    continue;
-                }
-                keywordBookTable.put(book.getId(), keywords);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("keywordsTable.ser"));
-        outputStream.writeObject(keywordBookTable);
-        outputStream.flush();
-        outputStream.close();
-        return keywordBookTable;
-    }
-
+    /**
+     * loading a keyword dictionary from file or initializing a new instance by some calculation
+     * @param library the (Integer, Book) library
+     * @return a Keyword Dictionary
+     */
     @Bean
     public KeywordDictionary keywordDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
 
@@ -155,6 +116,11 @@ public class IndexTableConfig {
         return dictionary;
     }
 
+    /**
+     * loading a title dictionary from file or initializing a new instance by some calculation
+     * @param library the (Integer, Book) library
+     * @return HashMap<String, HashSet<Integer>>: key for keyword, value for ids of books containing the keyword
+     */
     @Bean
     public HashMap<String, HashSet<Integer>> titleDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException {
         if (new File("titles.ser").exists()){
@@ -197,6 +163,11 @@ public class IndexTableConfig {
         return titleDictionary;
     }
 
+    /**
+     * loading an author dictionary from file or initializing a new instance by some calculation
+     * @param library the (Integer, Book) library
+     * @return HashMap<String, HashSet<Integer>>: key for keyword, value for ids of books' authors containing the keyword
+     */
     @Bean
     public HashMap<String, HashSet<Integer>> authorDictionary(Map<Integer, Book> library) throws IOException, ClassNotFoundException{
         if (new File("authors.ser").exists()){

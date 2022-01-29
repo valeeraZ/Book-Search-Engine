@@ -68,6 +68,11 @@ public class GraphRankingConfig {
 
     }
 
+    /**
+     * create Bean of map of closeness centrality
+     * {Book id, closeness centrality value}
+     * @return the map of closeness centrality
+     */
     @Bean
     public Map<Integer, Double> closenessCentrality(HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap) throws IOException, ClassNotFoundException {
         if (new File("closeness.ser").exists()){

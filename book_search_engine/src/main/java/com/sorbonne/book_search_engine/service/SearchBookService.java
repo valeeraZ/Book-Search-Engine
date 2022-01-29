@@ -35,6 +35,11 @@ public class SearchBookService {
     private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
     private final Map<Integer, Double> closenessCentrality;
 
+    /**
+     * return books on a specific page of pagedLibrary
+     * @param page the page number
+     * @return a list of books with some meta information in a Result Object
+     */
     public Result getBooksOnPage(int page){
         pagedLibrary.setPage(page);
         Result result = new Result();
@@ -46,6 +51,11 @@ public class SearchBookService {
         return result;
     }
 
+    /**
+     * get a book by its id from library
+     * @param id the id of book
+     * @return a book object or null if the id not exists
+     */
     public Book getBookById(int id){
         try {
             return library.get(id);
@@ -54,6 +64,11 @@ public class SearchBookService {
         }
     }
 
+    /**
+     * search books containing words having the stem of keyword given in parameter
+     * @param word the keyword to search in books
+     * @return a list of books
+     */
     public List<Book> getBooksByWord(String word){
         String stem = keywordDictionary.getWord2Keyword().get(word.toLowerCase(Locale.ROOT));
         if (stem == null)
@@ -73,6 +88,11 @@ public class SearchBookService {
 
     }
 
+    /**
+     * search books with titles containing words having the stem of keyword given in parameter
+     * @param word the keyword to search in books' titles
+     * @return a list of books
+     */
     public List<Book> getBooksByTitle(String word){
         HashSet<Integer> result = titleDictionary.getOrDefault(word.toLowerCase(Locale.ROOT), new HashSet<>());
         if (result.isEmpty())
@@ -85,6 +105,11 @@ public class SearchBookService {
         return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    /**
+     * search books with authors containing words having the stem of keyword given in parameter
+     * @param word the keyword to search in books' authors
+     * @return a list of books
+     */
     public List<Book> getBooksByAuthor(String word){
         HashSet<Integer> result = authorDictionary.getOrDefault(word.toLowerCase(Locale.ROOT), new HashSet<>());
         if (result.isEmpty())
@@ -97,7 +122,11 @@ public class SearchBookService {
         return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-
+    /**
+     * search books containing text matching the regex given in parameter
+     * @param regEx the regex to match in books' contenu
+     * @return a list of books
+     */
     public List<Book> getBooksByRegex(String regEx){
         HashMap<String, String> word2Keywords = keywordDictionary.getWord2Keyword();
         HashSet<String> candidats = new HashSet<>(word2Keywords.keySet());
@@ -117,6 +146,11 @@ public class SearchBookService {
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    /**
+     * search books with title containing text matching the regex given in parameter
+     * @param regEx the regex to match in books' title
+     * @return a list of books
+     */
     public List<Book> getBooksByRegexInTitle(String regEx){
         HashSet<String> candidats = new HashSet<>(titleDictionary.keySet());
         HashSet<String> words = getWordsByRegEx(candidats, regEx);
@@ -135,6 +169,11 @@ public class SearchBookService {
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    /**
+     * search books with authors containing text matching the regex given in parameter
+     * @param regEx the regex to match in books' authors
+     * @return a list of books
+     */
     public List<Book> getBooksByRegexInAuthor(String regEx){
         HashSet<String> candidats = new HashSet<>(authorDictionary.keySet());
         HashSet<String> words = getWordsByRegEx(candidats, regEx);
@@ -153,16 +192,32 @@ public class SearchBookService {
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    /**
+     * get the jaccard distance between 2 books represented by id
+     * @param id1 the id of book 1
+     * @param id2 the id of book 2
+     * @return their jaccard distance
+     */
     public double jaccardDistance2Books(int id1, int id2){
         return jaccardDistanceMap.get(id1).get(id2);
     }
 
+    /**
+     * order a list of books by closeness centrality in descended order
+     * @param books the list of books to be ordered
+     * @return a list of books
+     */
     public List<Book> orderBooksByCloseness(List<Book> books){
         List<Integer> orderedIds = new ArrayList<>(closenessCentrality.keySet());
         books.sort(Comparator.comparing(book -> orderedIds.indexOf(book.getId())));
         return books;
     }
 
+    /**
+     * get some similar books of books given in parameter
+     * @param ids the books' id to search for some other similar books
+     * @return a list books
+     */
     public List<Book> getNeighborBooksByJaccard(List<Integer> ids){
         HashSet<Integer> neighborIds = new HashSet<>();
         for (Integer id: ids){

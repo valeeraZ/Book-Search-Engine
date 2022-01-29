@@ -27,12 +27,22 @@ import java.util.*;
 public class SearchBookController {
     private final SearchBookService searchBookService;
 
+    /**
+     * GET books page by page
+     * @param page the page number, 0 by default
+     * @return ResponseEntity<Result> containing books and some meta information about page
+     */
     @GetMapping("/books")
     public ResponseEntity<Result> books(@RequestParam(required = false,defaultValue = "0") int page){
         log.info("GET /books?page=" + page);
         return ResponseEntity.ok(searchBookService.getBooksOnPage(page));
     }
 
+    /**
+     * GET book by id
+     * @param id the book's id
+     * @return ResponseEntity<Book> a book if id found, else return a 404 error
+     */
     @GetMapping("/books/{id}")
     public ResponseEntity<Book> bookById(@PathVariable(required = true) int id){
         log.info("GET /books/" + id);
@@ -43,6 +53,12 @@ public class SearchBookController {
             return ResponseEntity.notFound().build();
     }
 
+    /**
+     * GET books by searching keyword
+     * @param content the keyword string
+     * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
+     * @return ResponseEntity<List<Book>>
+     */
     @GetMapping(value = "/books", params = "search")
     public ResponseEntity<List<Book>> booksByWord(@NotBlank @NotNull @RequestParam(name = "search", required = true) String content,
                                                   @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
@@ -70,6 +86,11 @@ public class SearchBookController {
         return resultKeywords.orElse(new ArrayList<>());
     }
 
+    /**
+     * GET books by searching keyword in its titles
+     * @param content the keyword string, ordered by relevance score to keyword
+     * @return ResponseEntity<List<Book>>
+     */
     @GetMapping(value = "/books", params = "searchByTitle")
     public ResponseEntity<List<Book>> booksByTitle(@NotBlank @NotNull @RequestParam(name = "searchByTitle", required = true) String content){
         log.info("GET /books?searchByTitle=" + content);
@@ -83,6 +104,11 @@ public class SearchBookController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * GET books by searching keyword in its authors
+     * @param content the keyword string, ordered by relevance score to keyword
+     * @return ResponseEntity<List<Book>>
+     */
     @GetMapping(value = "/books", params = "searchByAuthor")
     public ResponseEntity<List<Book>> booksByAuthor(@NotBlank @NotNull @RequestParam(name = "searchByAuthor", required = true) String content){
         log.info("GET /books?searchByAuthor=" + content);
@@ -96,6 +122,12 @@ public class SearchBookController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * GET books by matching regex
+     * @param content the regex string
+     * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
+     * @return ResponseEntity<List<Book>>
+     */
     @GetMapping(value = "/books", params = "regex")
     public ResponseEntity<List<Book>> booksByRegEx(@NotBlank @NotNull @RequestParam(name = "regex", required = true) String content,
                                                    @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
@@ -124,6 +156,11 @@ public class SearchBookController {
         return ResponseEntity.ok(uniqueResult);
     }
 
+    /**
+     * GET some similar books to the books representing by its id
+     * @param suggestions ids of books to search their similar books as suggestions
+     * @return ResponseEntity<List<Book>> a list of similar books
+     */
     @GetMapping(value = "/books", params = "suggestions")
     public ResponseEntity<List<Book>> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestions") Integer[] suggestions){
         log.info("GET /books?ids=" + Arrays.toString(suggestions));

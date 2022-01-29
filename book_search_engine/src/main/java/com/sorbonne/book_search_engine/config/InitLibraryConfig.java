@@ -91,8 +91,8 @@ public class InitLibraryConfig {
     }
 
     /**
-     * separate the 1680 books library to many lists, each list contains 12 books
-     * @return the PagedListHolder for request books from page 0 - 139 (1680/12 = 140)
+     * separate the books library to many lists (pageable), each list contains 20 books
+     * @return the PagedListHolder of books ordered by closeness centrality, each page containing 20 books
      */
     @Bean
     public PagedListHolder<Book> pagedLibrary(Map<Integer, Book> library, Map<Integer, Double> closenessCentrality){
@@ -102,7 +102,7 @@ public class InitLibraryConfig {
             books.add(library.get(id));
         }
         PagedListHolder<Book> pagedLibrary = new PagedListHolder<>(books);
-        pagedLibrary.setPageSize(12);
+        pagedLibrary.setPageSize(20);
         return pagedLibrary;
     }
 }

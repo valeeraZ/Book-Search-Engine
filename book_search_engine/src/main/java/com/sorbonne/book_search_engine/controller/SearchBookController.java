@@ -53,6 +53,12 @@ public class SearchBookController {
             return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/books/top100")
+    public ResponseEntity<List<Book>> booksTop100(){
+        log.info("GET /books/top100");
+        return ResponseEntity.ok(searchBookService.getTop100Books());
+    }
+
     /**
      * GET books by searching keyword
      * @param content the keyword string

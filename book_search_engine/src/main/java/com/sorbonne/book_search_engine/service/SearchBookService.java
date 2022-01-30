@@ -34,6 +34,7 @@ public class SearchBookService {
     private final HashMap<String, HashSet<Integer>> authorDictionary;
     private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
     private final Map<Integer, Double> closenessCentrality;
+    private final List<Book> top100Books;
 
     /**
      * return books on a specific page of pagedLibrary
@@ -229,6 +230,10 @@ public class SearchBookService {
         List<Book> result = new ArrayList<>();
         neighborIds.forEach(id -> result.add(getBookById(id)));
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public List<Book> getTop100Books() {
+        return top100Books;
     }
 
     private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){

@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * Created by Sylvain in 2022/01.
@@ -56,6 +57,7 @@ public class InitLibraryConfig {
         ArrayList<Book> books;
         while (library.size() < 1664){
             books = Objects.requireNonNull(result.getBody()).getResults();
+            books = books.stream().filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
             List<Future<Map.Entry<Integer, Book>>> futures = new ArrayList<>();
             for (Book book: books){
                 futures.add(fetchBookService.getBook(book));

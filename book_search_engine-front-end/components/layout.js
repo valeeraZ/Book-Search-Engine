@@ -84,7 +84,7 @@ export default function Layout({ children }) {
                             </SearchIconWrapper>
                             <StyledAutocomplete
                                 freeSolo
-                                placeholder="Search books with keywords or ReGex"
+                                placeholder="Search books with keywords or RegEx"
                                 id="free-solo-2-demo"
                                 disableClearable
                                 options={top100books.map((option) => option.title)}
@@ -93,7 +93,7 @@ export default function Layout({ children }) {
                                     return <InputBase
                                         {...params.InputProps}
                                         {...rest}
-                                        placeholder="Search by keyword"
+                                        placeholder="Search by keyword or RegEx"
                                         style={{width: '40ch'}}
                                         onKeyPress={
                                             (event) => {

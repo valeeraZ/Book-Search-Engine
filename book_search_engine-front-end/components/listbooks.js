@@ -15,7 +15,7 @@ export default function ListBooks({ books }) {
     return (
         <Grid container columns={{ xs: 4, sm: 8, md: 12 }} spacing={2} style={{marginBottom:"2em"}}>
             {books.map((book) => (
-                <Grid item xs={2} sm={4} md={3} key={book.id}>
+                <Grid item xs={4} sm={4} md={3} key={book.id}>
                     <Link href={`/book?id=${book.id}`} passHref>
                         <IconButton>
                         <Book>

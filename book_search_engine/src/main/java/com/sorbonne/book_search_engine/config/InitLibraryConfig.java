@@ -3,6 +3,7 @@ package com.sorbonne.book_search_engine.config;
 import com.sorbonne.book_search_engine.entity.Book;
 import com.sorbonne.book_search_engine.entity.GutendexData;
 import com.sorbonne.book_search_engine.service.FetchBookService;
+import javafx.util.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,13 +111,15 @@ public class InitLibraryConfig {
     }
 
     @Bean
-    public List<Book> top100Books(Map<Integer, Book> library, Map<Integer, Double> closenessCentrality){
-        List<Book> books = new ArrayList<>();
-        List<Integer> orderedIds = new ArrayList<>(closenessCentrality.keySet());
-        for (int i = 0; i < 100; i++) {
-            int id = orderedIds.get(i);
-            books.add(library.get(id));
+    public List<Pair<Integer, String>> top100BooksPreview(Map<Integer, Book> library, Map<Integer, Double> closenessCentrality){
+        List<Pair<Integer, String>> result = new ArrayList<>();
+        Set<Integer> ids = closenessCentrality.keySet();
+        int i = 0;
+        for (Integer id: ids){
+            result.add(new Pair<>(id, library.get(id).getTitle()));
+            i++;
+            if (i == 100) break;
         }
-        return books;
+        return result;
     }
 }

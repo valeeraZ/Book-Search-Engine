@@ -54,16 +54,6 @@ public class SearchBookController {
     }
 
     /**
-     * GET top 100 popular books (ordered by closeness centrality)
-     * @return ResponseEntity<List<Book>>
-     */
-    @GetMapping("/books/top100")
-    public ResponseEntity<List<Book>> booksTop100(){
-        log.info("GET /books/top100");
-        return ResponseEntity.ok(searchBookService.getTop100Books());
-    }
-
-    /**
      * GET books by searching keyword or regex in its content
      * @param content the keyword or regex string
      * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)

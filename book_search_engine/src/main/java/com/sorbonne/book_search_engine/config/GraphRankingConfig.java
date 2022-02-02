@@ -20,14 +20,45 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class GraphRankingConfig {
+    private final KeywordDictionary keywordDictionary;
+    static HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
+
+    @Bean
+    public HashMap<Integer, Integer> jaccardMapNeighbor() throws IOException, ClassNotFoundException {
+        if (new File("jaccardNeighbor.ser").exists()){
+            log.info("Loading Jaccard Map Neighbors from file to memory...");
+            ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("jaccardNeighbor.ser"));
+            HashMap<Integer, Integer> jaccardMapNeighbor = (HashMap<Integer, Integer>) inputStream.readObject();
+            inputStream.close();
+            return jaccardMapNeighbor;
+        }
+
+        log.info("Charging Jaccard Map Neighbors...");
+        HashMap<Integer, Integer> jaccardMapNeighbor = new HashMap<>();
+        if (Objects.isNull(jaccardDistanceMap))
+            jaccardDistanceMap = calculateJaccardDistanceMap();
+        for (Map.Entry<Integer, HashMap<Integer, Double>> jaccardDistance: jaccardDistanceMap.entrySet()){
+            int id = jaccardDistance.getKey();
+            HashMap<Integer, Double> distances = jaccardDistance.getValue();
+            distances.remove(id);
+            int idNeighbor = Collections.min(distances.entrySet(), Map.Entry.comparingByValue()).getKey();
+            jaccardMapNeighbor.put(id, idNeighbor);
+        }
+
+        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("jaccardNeighbor.ser"));
+        outputStream.writeObject(jaccardMapNeighbor);
+        outputStream.flush();
+        outputStream.close();
+
+        return jaccardMapNeighbor;
+    }
 
     /**
-     * create Bean of jaccard distance matrix
+     * create jaccard distance matrix
      * {Book_id_1, map{Book_id2, distance_book1_book2}}
      * @return the jaccard distance matrix map
      */
-    @Bean
-    public HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap(KeywordDictionary keywordDictionary) throws IOException, ClassNotFoundException {
+    private HashMap<Integer, HashMap<Integer, Double>> calculateJaccardDistanceMap() throws IOException, ClassNotFoundException {
 
         if (new File("jaccard.ser").exists()){
             log.info("Loading Jaccard Distance Matrix from file to memory...");
@@ -74,7 +105,7 @@ public class GraphRankingConfig {
      * @return the map of closeness centrality
      */
     @Bean
-    public Map<Integer, Double> closenessCentrality(HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap) throws IOException, ClassNotFoundException {
+    public Map<Integer, Double> closenessCentrality() throws IOException, ClassNotFoundException {
         if (new File("closeness.ser").exists()){
             log.info("Loading Closeness Centrality Ranking from file to memory...");
             ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("closeness.ser"));
@@ -84,6 +115,8 @@ public class GraphRankingConfig {
         }
 
         log.info("Charging Closeness Centrality Ranking...");
+        if (Objects.isNull(jaccardDistanceMap))
+            jaccardDistanceMap = calculateJaccardDistanceMap();
         int numberBooks = jaccardDistanceMap.size();
         HashMap<Integer, Double> closenessMap = new HashMap<>();
         for (Map.Entry<Integer, HashMap<Integer, Double>> jaccardDistance: jaccardDistanceMap.entrySet()){

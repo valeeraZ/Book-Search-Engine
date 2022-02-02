@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 class BookSearchEngineApplicationTests {
     private final SearchBookService searchBookService;
-    private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
     private final Map<Integer, Double> closenessCentrality;
 
     @Test
@@ -61,14 +60,6 @@ class BookSearchEngineApplicationTests {
     void testRegExSearchKeyword(){
         List<Book> books = searchBookService.getBooksByRegex("winterb");
         System.out.println("books = " + books);
-    }
-
-    @Test
-    void testJaccardDistance(){
-        double distance10and30 = searchBookService.jaccardDistance2Books(10, 30);
-        double distance10and1 = searchBookService.jaccardDistance2Books(10, 1);
-        System.out.println("distance between Book 10 and Book 30 = " + distance10and30);
-        System.out.println("distance between Book 10 and Book 1 = " + distance10and1);
     }
 
     @Test

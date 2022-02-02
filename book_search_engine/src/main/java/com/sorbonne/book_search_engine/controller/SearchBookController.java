@@ -139,15 +139,14 @@ public class SearchBookController {
     }
 
     /**
-     * GET some similar books to the books representing by its id
-     * @param suggestions ids of books to search their similar books as suggestions
-     * @return ResponseEntity<List<Book>> a list of similar books
+     * GET a similar book to the book representing by it's id
+     * @param bookId id of book to search it's similar book as suggestion
+     * @return ResponseEntity<Book> a similar book
      */
-    @GetMapping(value = "/books", params = "suggestions")
-    public ResponseEntity<List<Book>> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestions") Integer[] suggestions){
-        log.info("GET /books?ids=" + Arrays.toString(suggestions));
-        List<Integer> bookIds = Arrays.asList(suggestions);
-        return ResponseEntity.ok(searchBookService.getNeighborBooksByJaccard(bookIds));
+    @GetMapping(value = "/books", params = "suggestion")
+    public ResponseEntity<Book> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestion") Integer bookId){
+        log.info("GET /books?suggestion=" + bookId);
+        return ResponseEntity.ok(searchBookService.getNeighborBookByJaccard(bookId));
     }
 
     private List<Book> retainIntersection(List<List<Book>> results) {

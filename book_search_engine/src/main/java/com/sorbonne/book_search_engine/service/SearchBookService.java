@@ -32,7 +32,8 @@ public class SearchBookService {
     private final KeywordDictionary keywordDictionary;
     private final HashMap<String, HashSet<Integer>> titleDictionary;
     private final HashMap<String, HashSet<Integer>> authorDictionary;
-    private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
+    //private final HashMap<Integer, HashMap<Integer, Double>> jaccardDistanceMap;
+    private final HashMap<Integer, Integer> jaccardMapNeighbor;
     private final Map<Integer, Double> closenessCentrality;
 
     /**
@@ -172,16 +173,6 @@ public class SearchBookService {
     }
 
     /**
-     * get the jaccard distance between 2 books represented by id
-     * @param id1 the id of book 1
-     * @param id2 the id of book 2
-     * @return their jaccard distance
-     */
-    public double jaccardDistance2Books(int id1, int id2){
-        return jaccardDistanceMap.get(id1).get(id2);
-    }
-
-    /**
      * order a list of books by closeness centrality in descended order
      * @param books the list of books to be ordered
      * @return a list of books
@@ -193,10 +184,11 @@ public class SearchBookService {
     }
 
     /**
-     * get some similar books of books given in parameter
-     * @param ids the books' id to search for some other similar books
-     * @return a list books
+     * //get some similar books of books given in parameter
+     * //@param ids the books' id to search for some other similar books
+     * //@return a list books
      */
+    /*
     public List<Book> getNeighborBooksByJaccard(List<Integer> ids){
         HashSet<Integer> neighborIds = new HashSet<>();
         for (Integer id: ids){
@@ -208,6 +200,11 @@ public class SearchBookService {
         List<Book> result = new ArrayList<>();
         neighborIds.forEach(id -> result.add(getBookById(id)));
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    }*/
+
+    public Book getNeighborBookByJaccard(int id){
+        int id2 = jaccardMapNeighbor.get(id);
+        return getBookById(id2);
     }
 
     private HashSet<String> getWordsByRegEx(HashSet<String> words, String regEx){

@@ -131,19 +131,12 @@ public class SearchBookService {
     public List<Book> getBooksByRegex(String regEx){
         HashMap<String, String> word2Keywords = keywordDictionary.getWord2Keyword();
         HashSet<String> candidats = new HashSet<>(word2Keywords.keySet());
-        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        HashSet<String> words = getWordsByRegEx(candidats, regEx.toLowerCase(Locale.ROOT));
         List<List<Book>> listBooks = new ArrayList<>();
         for (String word: words){
             listBooks.add(getBooksByWord(word));
         }
-        HashSet<Book> uniqueBooks = new HashSet<>();
-        List<Book> result = new ArrayList<>();
-        for (List<Book> books: listBooks) {
-            for (Book book: books) {
-                if (uniqueBooks.add(book))
-                    result.add(book);
-            }
-        }
+        List<Book> result = unionAndRemoveDuplicates(listBooks);
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -154,19 +147,12 @@ public class SearchBookService {
      */
     public List<Book> getBooksByRegexInTitle(String regEx){
         HashSet<String> candidats = new HashSet<>(titleDictionary.keySet());
-        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        HashSet<String> words = getWordsByRegEx(candidats, regEx.toLowerCase(Locale.ROOT));
         List<List<Book>> listBooks = new ArrayList<>();
         for (String word: words){
             listBooks.add(getBooksByTitle(word));
         }
-        HashSet<Book> uniqueBooks = new HashSet<>();
-        List<Book> result = new ArrayList<>();
-        for (List<Book> books: listBooks) {
-            for (Book book: books) {
-                if (uniqueBooks.add(book))
-                    result.add(book);
-            }
-        }
+        List<Book> result = unionAndRemoveDuplicates(listBooks);
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -177,19 +163,12 @@ public class SearchBookService {
      */
     public List<Book> getBooksByRegexInAuthor(String regEx){
         HashSet<String> candidats = new HashSet<>(authorDictionary.keySet());
-        HashSet<String> words = getWordsByRegEx(candidats, regEx);
+        HashSet<String> words = getWordsByRegEx(candidats, regEx.toLowerCase(Locale.ROOT));
         List<List<Book>> listBooks = new ArrayList<>();
         for (String word: words){
             listBooks.add(getBooksByAuthor(word));
         }
-        HashSet<Book> uniqueBooks = new HashSet<>();
-        List<Book> result = new ArrayList<>();
-        for (List<Book> books: listBooks) {
-            for (Book book: books) {
-                if (uniqueBooks.add(book))
-                    result.add(book);
-            }
-        }
+        List<Book> result = unionAndRemoveDuplicates(listBooks);
         return result.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -287,5 +266,16 @@ public class SearchBookService {
         return true;
     }
 
+    private List<Book> unionAndRemoveDuplicates(List<List<Book>> lists){
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> uniqueResult = new ArrayList<>();
+        for (List<Book> list: lists) {
+            for (Book book: list) {
+                if (uniqueBooks.add(book))
+                    uniqueResult.add(book);
+            }
+        }
+        return uniqueResult;
+    }
 
 }

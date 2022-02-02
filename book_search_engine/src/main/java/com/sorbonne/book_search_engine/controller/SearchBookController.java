@@ -53,6 +53,10 @@ public class SearchBookController {
             return ResponseEntity.notFound().build();
     }
 
+    /**
+     * GET top 100 popular books (ordered by closeness centrality)
+     * @return ResponseEntity<List<Book>>
+     */
     @GetMapping("/books/top100")
     public ResponseEntity<List<Book>> booksTop100(){
         log.info("GET /books/top100");
@@ -60,8 +64,8 @@ public class SearchBookController {
     }
 
     /**
-     * GET books by searching keyword
-     * @param content the keyword string
+     * GET books by searching keyword or regex in its content
+     * @param content the keyword or regex string
      * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
      * @return ResponseEntity<List<Book>>
      */
@@ -69,16 +73,91 @@ public class SearchBookController {
     public ResponseEntity<List<Book>> booksByWord(@NotBlank @NotNull @RequestParam(name = "search", required = true) String content,
                                                   @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
         log.info("GET /books?search=" + content + "&closeness=" + closeness);
+
+        // search books by keyword, that's to say `content` is not regarded as an regex
         String[] words = content.split("\\s+");
-        List<List<Book>> results = new ArrayList<>();
+        List<List<Book>> resultsKeyword = new ArrayList<>();
 
         for (String word: words) {
-            results.add(searchBookService.getBooksByWord(word));
+            resultsKeyword.add(searchBookService.getBooksByWord(word));
         }
-        List<Book> result = retainIntersection(results);
+        List<Book> resultKeyword = retainIntersection(resultsKeyword);
+
+        // search books by regex, that's to say `content` is regarded as an regex
+        List<Book> resultRegex = new ArrayList<>(searchBookService.getBooksByRegex(content));
+
+        // remove duplicates of resultKeyword & resultRegex and make union
+        List<Book> finalUniqueResult = unionAndRemoveDuplicates(resultKeyword, resultRegex);
+
         if (closeness)
-            result = searchBookService.orderBooksByCloseness(result);
-        return ResponseEntity.ok(result);
+            finalUniqueResult = searchBookService.orderBooksByCloseness(finalUniqueResult);
+        return ResponseEntity.ok(finalUniqueResult);
+    }
+
+    /**
+     * GET books by searching keyword or regex in its titles
+     * @param content the keyword or regex string
+     * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
+     * @return ResponseEntity<List<Book>>
+     */
+    @GetMapping(value = "/books", params = "searchByTitle")
+    public ResponseEntity<List<Book>> booksByTitle(@NotBlank @NotNull @RequestParam(name = "searchByTitle", required = true) String content,
+                                                   @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
+        log.info("GET /books?searchByTitle=" + content + "&closeness=" + closeness);
+        // search books by regex, that's to say `content` is regarded as an regex
+        String[] words = content.split("\\s+");
+        List<List<Book>> resultsKeyword = new ArrayList<>();
+        for (String word: words) {
+            resultsKeyword.add(searchBookService.getBooksByTitle(word));
+        }
+        List<Book> resultKeyword = retainIntersection(resultsKeyword);
+        // search books by regex, that's to say `content` is regarded as an regex
+        List<Book> resultRegex = new ArrayList<>(searchBookService.getBooksByRegexInTitle(content));
+        // remove duplicates of resultKeyword & resultRegex and make union
+        List<Book> finalUniqueResult = unionAndRemoveDuplicates(resultKeyword, resultRegex);
+
+        if (closeness)
+            finalUniqueResult = searchBookService.orderBooksByCloseness(finalUniqueResult);
+        return ResponseEntity.ok(finalUniqueResult);
+    }
+
+    /**
+     * GET books by searching keyword or regex in its authors' names
+     * @param content the keyword string or regex
+     * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
+     * @return ResponseEntity<List<Book>>
+     */
+    @GetMapping(value = "/books", params = "searchByAuthor")
+    public ResponseEntity<List<Book>> booksByAuthor(@NotBlank @NotNull @RequestParam(name = "searchByAuthor", required = true) String content,
+                                                    @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
+        log.info("GET /books?searchByAuthor=" + content + "&closeness=" + closeness);
+        // search books by regex, that's to say `content` is regarded as an regex
+        String[] words = content.split("\\s+");
+        List<List<Book>> resultsKeyword = new ArrayList<>();
+        for (String word: words) {
+            resultsKeyword.add(searchBookService.getBooksByAuthor(word));
+        }
+        List<Book> resultKeyword = retainIntersection(resultsKeyword);
+        // search books by regex, that's to say `content` is regarded as an regex
+        List<Book> resultRegex = new ArrayList<>(searchBookService.getBooksByRegexInAuthor(content));
+        // remove duplicates of resultKeyword & resultRegex and make union
+        List<Book> finalUniqueResult = unionAndRemoveDuplicates(resultKeyword, resultRegex);
+
+        if (closeness)
+            finalUniqueResult = searchBookService.orderBooksByCloseness(finalUniqueResult);
+        return ResponseEntity.ok(finalUniqueResult);
+    }
+
+    /**
+     * GET some similar books to the books representing by its id
+     * @param suggestions ids of books to search their similar books as suggestions
+     * @return ResponseEntity<List<Book>> a list of similar books
+     */
+    @GetMapping(value = "/books", params = "suggestions")
+    public ResponseEntity<List<Book>> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestions") Integer[] suggestions){
+        log.info("GET /books?ids=" + Arrays.toString(suggestions));
+        List<Integer> bookIds = Arrays.asList(suggestions);
+        return ResponseEntity.ok(searchBookService.getNeighborBooksByJaccard(bookIds));
     }
 
     private List<Book> retainIntersection(List<List<Book>> results) {
@@ -92,85 +171,16 @@ public class SearchBookController {
         return resultKeywords.orElse(new ArrayList<>());
     }
 
-    /**
-     * GET books by searching keyword in its titles
-     * @param content the keyword string, ordered by relevance score to keyword
-     * @return ResponseEntity<List<Book>>
-     */
-    @GetMapping(value = "/books", params = "searchByTitle")
-    public ResponseEntity<List<Book>> booksByTitle(@NotBlank @NotNull @RequestParam(name = "searchByTitle", required = true) String content){
-        log.info("GET /books?searchByTitle=" + content);
-        String[] words = content.split("\\s+");
-        List<List<Book>> results = new ArrayList<>();
-        for (String word: words) {
-            results.add(searchBookService.getBooksByTitle(word));
-        }
-        List<Book> result = retainIntersection(results);
-        result = searchBookService.orderBooksByCloseness(result);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * GET books by searching keyword in its authors
-     * @param content the keyword string, ordered by relevance score to keyword
-     * @return ResponseEntity<List<Book>>
-     */
-    @GetMapping(value = "/books", params = "searchByAuthor")
-    public ResponseEntity<List<Book>> booksByAuthor(@NotBlank @NotNull @RequestParam(name = "searchByAuthor", required = true) String content){
-        log.info("GET /books?searchByAuthor=" + content);
-        String[] words = content.split("\\s+");
-        List<List<Book>> results = new ArrayList<>();
-        for (String word: words) {
-            results.add(searchBookService.getBooksByAuthor(word));
-        }
-        List<Book> result = retainIntersection(results);
-        result = searchBookService.orderBooksByCloseness(result);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * GET books by matching regex
-     * @param content the regex string
-     * @param closeness boolean, ordered by closeness centrality or not, by default is not (ordered by relevance score to keyword)
-     * @return ResponseEntity<List<Book>>
-     */
-    @GetMapping(value = "/books", params = "regex")
-    public ResponseEntity<List<Book>> booksByRegEx(@NotBlank @NotNull @RequestParam(name = "regex", required = true) String content,
-                                                   @RequestParam(name = "closeness", required = false, defaultValue = "false") boolean closeness){
-        log.info("GET /books?regex=" + content + "&closeness=" + closeness);
-        List<Book> results = new ArrayList<>();
-
-        results.addAll(searchBookService.getBooksByRegexInTitle(content));
-        results.addAll(searchBookService.getBooksByRegexInAuthor(content));
-        results.addAll(searchBookService.getBooksByRegex(content));
-
-        HashSet<Book> uniqueBooks;
-        List<Book> uniqueResult;
-        if (closeness){
-            uniqueBooks = new HashSet<>(results);
-            uniqueResult = new ArrayList<>(uniqueBooks);
-            uniqueResult = searchBookService.orderBooksByCloseness(uniqueResult);
-        }else {
-            uniqueBooks = new HashSet<>();
-            uniqueResult = new ArrayList<>();
-            for (Book book: results){
+    @SafeVarargs
+    private final List<Book> unionAndRemoveDuplicates(List<Book>... lists){
+        HashSet<Book> uniqueBooks = new HashSet<>();
+        List<Book> uniqueResult = new ArrayList<>();
+        for (List<Book> list: lists) {
+            for (Book book: list) {
                 if (uniqueBooks.add(book))
                     uniqueResult.add(book);
             }
         }
-
-        return ResponseEntity.ok(uniqueResult);
-    }
-
-    /**
-     * GET some similar books to the books representing by its id
-     * @param suggestions ids of books to search their similar books as suggestions
-     * @return ResponseEntity<List<Book>> a list of similar books
-     */
-    @GetMapping(value = "/books", params = "suggestions")
-    public ResponseEntity<List<Book>> booksByJaccardDistance(@NotEmpty @RequestParam(name = "suggestions") Integer[] suggestions){
-        log.info("GET /books?ids=" + Arrays.toString(suggestions));
-        List<Integer> bookIds = Arrays.asList(suggestions);
-        return ResponseEntity.ok(searchBookService.getNeighborBooksByJaccard(bookIds));
+        return uniqueResult;
     }
 }

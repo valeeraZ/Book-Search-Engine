@@ -1,14 +1,10 @@
 import Layout from "../components/layout";
 import {Stack, Switch, Typography} from "@mui/material";
 import * as React from "react";
-import getAllBooks from "../lib/getAllBooks";
-import getBooksByKeyword from "../lib/getBooksByKeyword";
+import getBooksByContent from "../lib/getBooksByContent";
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-import Divider from '@mui/material/Divider';
-import getBooksByRegex from "../lib/getBooksByRegex";
 import getBooksByAuthor from "../lib/getBooksByAuthor";
 import getBooksByTitle from "../lib/getBooksByTitle";
 import Link from 'next/link'
@@ -16,7 +12,7 @@ import PropTypes from 'prop-types';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
-import styled from "@emotion/styled";
+import getRanking from "../lib/getRanking";
 
 const style = {
     width: '100%',
@@ -147,7 +143,13 @@ export default function Search({data}) {
                         <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
                             {books.booksByTitle.length} Results of books&apos; titles containing <i>{keyword}</i>
                         </Typography>
-                        {listBooks(books.booksByTitle)}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography>Ordered by </Typography>
+                            <Typography variant="body2">relevance of keyword</Typography>
+                            <Switch checked={checked} onChange={handleCheck}/>
+                            <Typography variant="body2">Ordered by popularity(closeness centrality)</Typography>
+                        </Stack>
+                        {checked ? listBooks(books.booksByTitleOrdered) : listBooks(books.booksByTitle)}
                     </div>
                     :
                     <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
@@ -156,10 +158,10 @@ export default function Search({data}) {
                 }
             </TabPanel>
             <TabPanel value={value} index={1}>
-                {books.booksByKeywordOrRegex.length > 0 ?
+                {books.booksByContent.length > 0 ?
                     <div>
                         <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
-                            {books.booksByKeywordOrRegex.length} Results of books&apos; content containing <i>{keyword}</i>
+                            {books.booksByContent.length} Results of books&apos; content containing <i>{keyword}</i>
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                             <Typography>Ordered by </Typography>
@@ -167,7 +169,7 @@ export default function Search({data}) {
                             <Switch checked={checked} onChange={handleCheck}/>
                             <Typography variant="body2">Ordered by popularity(closeness centrality)</Typography>
                         </Stack>
-                        {checked ? listBooks(books.booksByKeywordOrRegexOrdered) : listBooks(books.booksByKeywordOrRegex)}
+                        {checked ? listBooks(books.booksByContentOrdered) : listBooks(books.booksByContent)}
                     </div>
                     :
                     <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
@@ -181,7 +183,13 @@ export default function Search({data}) {
                         <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
                             {books.booksByAuthor.length} Results of books&apos; authors&apos; names containing <i>{keyword}</i>
                         </Typography>
-                        {listBooks(books.booksByAuthor)}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography>Ordered by </Typography>
+                            <Typography variant="body2">relevance of keyword</Typography>
+                            <Switch checked={checked} onChange={handleCheck}/>
+                            <Typography variant="body2">Ordered by popularity(closeness centrality)</Typography>
+                        </Stack>
+                        {checked ? listBooks(books.booksByAuthorOrdered) : listBooks(books.booksByAuthor)}
                     </div>
                     :
                     <Typography variant="h6" gutterBottom component="div" style={{marginTop: "2em"}}>
@@ -206,22 +214,29 @@ Array.prototype.unique = function () {
     return a;
 };
 
+function sortBooksByRanking(books, ranking){
+    books.sort((a, b) => {
+      return ranking.indexOf(a.id) - ranking.indexOf(b.id)
+    })
+    return books
+}
+
 export async function getServerSideProps({query}) {
     const keywordOrRegex = query.keyword || "";
 
-    const booksByKeywordOrdered = await getBooksByKeyword(keywordOrRegex, true)
-    const booksByRegexOrdered = await getBooksByRegex(keywordOrRegex, true)
-    const booksByKeyword = await getBooksByKeyword(keywordOrRegex, false)
-    const booksByRegex = await getBooksByRegex(keywordOrRegex, false)
-    const booksByAuthor = await getBooksByAuthor(keywordOrRegex)
-    const booksByTitle = await getBooksByTitle(keywordOrRegex)
+    const booksByContent = await getBooksByContent(keywordOrRegex, false)
+    const booksByAuthor = await getBooksByAuthor(keywordOrRegex, false)
+    const booksByTitle = await getBooksByTitle(keywordOrRegex, false)
+    const ranking = await getRanking()
     const data = {
         keyword: keywordOrRegex,
         data: {
-            booksByKeywordOrRegexOrdered: booksByKeywordOrdered.concat(booksByRegexOrdered).unique(),
-            booksByKeywordOrRegex: booksByKeyword.concat(booksByRegex).unique(),
+            booksByContent: booksByContent.unique(),
             booksByTitle: booksByTitle.unique(),
-            booksByAuthor: booksByAuthor.unique()
+            booksByAuthor: booksByAuthor.unique(),
+            booksByContentOrdered: booksByContent.unique().sort((a, b) => {return ranking.indexOf(a.id) - ranking.indexOf(b.id)}),
+            booksByTitleOrdered: booksByTitle.unique().sort((a, b) => {return ranking.indexOf(a.id) - ranking.indexOf(b.id)}),
+            booksByAuthorOrdered: booksByAuthor.unique().sort((a, b) => {return ranking.indexOf(a.id) - ranking.indexOf(b.id)})
         }
     }
     return {

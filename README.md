@@ -11,6 +11,8 @@ following their search history.
 
 We use [Spring Boot](http://projects.spring.io/spring-boot/) to create the back end and [Next.js](https://nextjs.org/) to create the front end for this web app.
 
+![demo](https://user-images.githubusercontent.com/39196828/152812390-939a98fc-7163-4326-b404-469f728a4757.png)
+
 ## Requirements
 
 For building and running the application you need:
@@ -19,6 +21,11 @@ For building and running the application you need:
 - [Maven 3](https://maven.apache.org)
 - [Node.js](https://nodejs.org/en/) version 10.13 or later
 - 1.5G of free disk space for downloading 1680 books
+
+## Demo
+
+https://user-images.githubusercontent.com/39196828/152809569-69d718dc-cd41-4e6f-b97c-3e2cdbad9750.mov
+
 
 ## Running the application locally
 
